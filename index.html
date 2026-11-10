@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APP 主题与布局定制原型系统</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Font Awesome (for gaming/brand fallback icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            user-select: none;
+        }
+
+        /* Dynamic Color Themes */
+        :root[data-theme="tech-blue"] {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --primary-light: rgba(59, 130, 246, 0.15);
+            --accent: #06b6d4;
+            --bg-app: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --border-color: rgba(59, 130, 246, 0.3);
+            --glow: rgba(59, 130, 246, 0.4);
+            --gradient-btn: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+
+        :root[data-theme="ice-purple"] {
+            --primary: #a855f7;
+            --primary-hover: #9333ea;
+            --primary-light: rgba(168, 85, 247, 0.15);
+            --accent: #ec4899;
+            --bg-app: #180d2a;
+            --bg-card: #271647;
+            --text-main: #faf5ff;
+            --border-color: rgba(168, 85, 247, 0.3);
+            --glow: rgba(168, 85, 247, 0.4);
+            --gradient-btn: linear-gradient(135deg, #c084fc 0%, #7e22ce 100%);
+        }
+
+        :root[data-theme="aurora-yellow"] {
+            --primary: #eab308;
+            --primary-hover: #ca8a04;
+            --primary-light: rgba(234, 179, 8, 0.15);
+            --accent: #f97316;
+            --bg-app: #1c1917;
+            --bg-card: #292524;
+            --text-main: #fefce8;
+            --border-color: rgba(234, 179, 8, 0.3);
+            --glow: rgba(234, 179, 8, 0.4);
+            --gradient-btn: linear-gradient(135deg, #fde047 0%, #ca8a04 100%);
+        }
+
+        /* Custom Scrollbar for Smooth UX */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.3);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.5);
+        }
+
+        /* Slanted rhombus clip path for Game Providers Preset 2 */
+        .rhombus-card {
+            transform: skewX(-10deg);
+        }
+        .rhombus-card > * {
+            transform: skewX(10deg);
+        }
+
+        .skewed-game-card {
+            transform: skewX(-6deg);
+            border-radius: 8px;
+        }
+        .skewed-game-card > * {
+            transform: skewX(6deg);
+        }
+
+        /* Marquee Animation */
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        .animate-marquee {
+            display: inline-block;
+            white-space: nowrap;
+            animation: marquee 12s linear infinite;
+        }
+
+        /* Dynamic Theme Application inside Phone */
+        .preview-theme-bg { background-color: var(--bg-app); color: var(--text-main); }
+        .preview-theme-card { background-color: var(--bg-card); border-color: var(--border-color); }
+        .preview-theme-primary { color: var(--primary); }
+        .preview-theme-btn { background: var(--gradient-btn); }
+        .preview-theme-border { border-color: var(--border-color); }
+        .preview-theme-glow { box-shadow: 0 0 15px var(--glow); }
+
+        /* Smooth Transition */
+        .theme-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans overflow-x-hidden">
+
+    <!-- Top Admin Header -->
+    <header class="h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md px-6 flex items-center justify-between z-30 sticky top-0">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <i data-lucide="layout-template" class="w-5 h-5 text-white"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight tracking-wide bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">APP 界面主题与布局定制平台</h1>
+                <p class="text-xs text-slate-400">实时交互原型配置与可视预览</p>
+            </div>
+        </div>
+
+        <!-- Global State Controls -->
+        <div class="flex items-center gap-4">
+            <!-- Login Switcher Toggle -->
+            <div class="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700/60">
+                <button id="state-logged-out-btn" onclick="setLoginState(false)" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 bg-blue-600 text-white shadow-md">
+                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i> 登录前状态
+                </button>
+                <button id="state-logged-in-btn" onclick="setLoginState(true)" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all duration-200 flex items-center gap-1.5">
+                    <i data-lucide="user-check" class="w-3.5 h-3.5"></i> 登录后状态
+                </button>
+            </div>
+
+            <!-- Global Preview Toggle Button -->
+            <button onclick="toggleModalPreview()" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-900/30 flex items-center gap-2 transition">
+                <i data-lucide="smartphone" class="w-4 h-4"></i> 全屏预览 APP
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- LEFT CONTROL PANEL (CONFIGURATOR) -->
+        <aside class="w-full md:w-[500px] lg:w-[560px] border-r border-slate-800 bg-slate-900 flex flex-col justify-between h-[calc(100vh-4rem)] z-10">
+            
+            <!-- Step Navigation Bar -->
+            <div class="p-4 border-b border-slate-800/80 bg-slate-900/50 flex items-center justify-between text-xs overflow-x-auto">
+                <span class="text-slate-400 font-medium whitespace-nowrap flex items-center gap-1">
+                    <i data-lucide="sliders" class="w-4 h-4 text-blue-400"></i> 配置模块步骤:
+                </span>
+                <div class="flex gap-2">
+                    <span id="step-badge-1" class="px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium">1. 导航</span>
+                    <span id="step-badge-2" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-medium">2. Banner</span>
+                    <span id="step-badge-3" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-medium">3. 公告</span>
+                    <span id="step-badge-4" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-medium">4. 厂商</span>
+                    <span id="step-badge-5" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-medium">5. 列表</span>
+                    <span id="step-badge-6" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-medium">6. 底栏</span>
+                </div>
+            </div>
+
+            <!-- Scrollable Configurator Sections -->
+            <div class="flex-1 overflow-y-auto p-5 space-y-6" id="configurator-scroll-area">
+                
+                <!-- SECTION 1: Top Navigation Layout -->
+                <section class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800/80 shadow-sm" id="section-nav">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">01</span>
+                            顶部导航布局设置
+                        </h2>
+                        <span class="text-xs text-slate-500">固定元件 · 改变排序/外观</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <!-- Option 1 -->
+                        <button onclick="setLayout('nav', 1)" id="btn-nav-1" class="layout-btn active p-3 rounded-xl border border-blue-500 bg-blue-500/10 text-left transition relative overflow-hidden group">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 1
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-100 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400 leading-tight">标准排序: [游戏菜单 | Logo | 注册 | 登录]</div>
+                            <div class="mt-2 text-[9px] bg-slate-900 p-1.5 rounded border border-slate-800 text-slate-300 font-mono">方形/圆角按钮</div>
+                        </button>
+                        <!-- Option 2 -->
+                        <button onclick="setLayout('nav', 2)" id="btn-nav-2" class="layout-btn p-3 rounded-xl border border-slate-800 bg-slate-900/60 text-left hover:border-slate-700 transition relative overflow-hidden group">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 2
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-0 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400 leading-tight">反转布局: [注册 | 登录 | Logo | 游戏菜单]</div>
+                            <div class="mt-2 text-[9px] bg-slate-900 p-1.5 rounded border border-slate-800 text-slate-300 font-mono">胶囊型长按钮</div>
+                        </button>
+                        <!-- Option 3 -->
+                        <button onclick="setLayout('nav', 3)" id="btn-nav-3" class="layout-btn p-3 rounded-xl border border-slate-800 bg-slate-900/60 text-left hover:border-slate-700 transition relative overflow-hidden group">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 3
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-0 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400 leading-tight">居中Logo: [菜单 | 注册 | Logo居中 | 登录]</div>
+                            <div class="mt-2 text-[9px] bg-slate-900 p-1.5 rounded border border-slate-800 text-slate-300 font-mono">霓虹微光样式</div>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- SECTION 2: Banner Layout -->
+                <section class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800/80 shadow-sm" id="section-banner">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">02</span>
+                            Banner 广告区域布局设置
+                        </h2>
+                        <span class="text-xs text-slate-500">3 种轮播展现形式</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <!-- Banner Option 1 -->
+                        <button onclick="setLayout('banner', 1)" id="btn-banner-1" class="layout-btn active p-3 rounded-xl border border-blue-500 bg-blue-500/10 text-left transition relative">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 1 (上下两行)
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-100 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400 leading-tight">第一行大轮播图 + 第二行 3 联展示位</div>
+                        </button>
+                        <!-- Banner Option 2 -->
+                        <button onclick="setLayout('banner', 2)" id="btn-banner-2" class="layout-btn p-3 rounded-xl border border-slate-800 bg-slate-900/60 text-left hover:border-slate-700 transition relative">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 2 (左右分栏)
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-0 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400 leading-tight">左侧主焦点大图 + 右侧上下双图</div>
+                        </button>
+                        <!-- Banner Option 3 -->
+                        <button onclick="setLayout('banner', 3)" id="btn-banner-3" class="layout-btn p-3 rounded-xl border border-slate-800 bg-slate-900/60 text-left hover:border-slate-700 transition relative">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 3 (沉浸式网格)
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-0 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400 leading-tight">全宽卡片 + 底部双列重合滚动</div>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- SECTION 3: Announcement Bar Layout -->
+                <section class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800/80 shadow-sm" id="section-notice">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">03</span>
+                            公告区域设置
+                        </h2>
+                        <span class="text-xs text-slate-500">跑马灯 / 未读消息 / 搜索</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="setLayout('notice', 1)" id="btn-notice-1" class="layout-btn active p-3 rounded-xl border border-blue-500 bg-blue-500/10 text-left transition relative">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 1 (标准顺序)
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-100 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400">从左到右: [跑马灯公告 ➔ 消息(带角标) ➔ 搜索图标]</div>
+                        </button>
+                        <button onclick="setLayout('notice', 2)" id="btn-notice-2" class="layout-btn p-3 rounded-xl border border-slate-800 bg-slate-900/60 text-left hover:border-slate-700 transition relative">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 2 (搜索优先)
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-0 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400">从左到右: [搜索图标 ➔ 跑马灯公告 ➔ 消息(带角标)]</div>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- SECTION 4: Game Providers Setup -->
+                <section class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800/80 shadow-sm" id="section-provider">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">04</span>
+                            游戏商区块卡片设置
+                        </h2>
+                        <span class="text-xs text-slate-500">不同背景形状与卡片外观</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="setLayout('provider', 1)" id="btn-provider-1" class="layout-btn active p-3 rounded-xl border border-blue-500 bg-blue-500/10 text-left transition relative">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 1
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-100 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400">经典标准矩阵方块背景</div>
+                        </button>
+                        <button onclick="setLayout('provider', 2)" id="btn-provider-2" class="layout-btn p-3 rounded-xl border border-slate-800 bg-slate-900/60 text-left hover:border-slate-700 transition relative">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 2
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-0 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400">潮流倾斜菱形 / 极速斜角造型</div>
+                        </button>
+                        <button onclick="setLayout('provider', 3)" id="btn-provider-3" class="layout-btn p-3 rounded-xl border border-slate-800 bg-slate-900/60 text-left hover:border-slate-700 transition relative">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 3
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-0 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400">电竞胶囊型+发光微边框</div>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- SECTION 5: Game List Layout -->
+                <section class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800/80 shadow-sm" id="section-gamelist">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">05</span>
+                            游戏列表与图标排列
+                        </h2>
+                        <span class="text-xs text-slate-500">计数/折叠/收藏图标</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="setLayout('gamelist', 1)" id="btn-gamelist-1" class="layout-btn active p-3 rounded-xl border border-blue-500 bg-blue-500/10 text-left transition relative">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 1 (一行 3 个)
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-100 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400">长方形游戏封面 + 右上角收藏爱心</div>
+                        </button>
+                        <button onclick="setLayout('gamelist', 2)" id="btn-gamelist-2" class="layout-btn p-3 rounded-xl border border-slate-800 bg-slate-900/60 text-left hover:border-slate-700 transition relative">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 2 (一行 4 个)
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-0 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400">斜四方形高密图 + 右下角收藏爱心</div>
+                        </button>
+                        <button onclick="setLayout('gamelist', 3)" id="btn-gamelist-3" class="layout-btn p-3 rounded-xl border border-slate-800 bg-slate-900/60 text-left hover:border-slate-700 transition relative">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 3 (一行 2 大图)
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-0 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400">高清大宽图 + 标签式书签收藏</div>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- SECTION 6: Bottom Navigation Layout -->
+                <section class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800/80 shadow-sm" id="section-tabbar">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">06</span>
+                            底部导航按钮设置 (TabBar)
+                        </h2>
+                        <span class="text-xs text-slate-500">排序/样式/悬浮效果</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="setLayout('tabbar', 1)" id="btn-tabbar-1" class="layout-btn active p-3 rounded-xl border border-blue-500 bg-blue-500/10 text-left transition relative">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 1
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-100 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400">首页-活动-分享-钱包-我的 (扁平图标)</div>
+                        </button>
+                        <button onclick="setLayout('tabbar', 2)" id="btn-tabbar-2" class="layout-btn p-3 rounded-xl border border-slate-800 bg-slate-900/60 text-left hover:border-slate-700 transition relative">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 2
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-0 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400">首页-分享-活动(凸起大图标)-钱包-我的</div>
+                        </button>
+                        <button onclick="setLayout('tabbar', 3)" id="btn-tabbar-3" class="layout-btn p-3 rounded-xl border border-slate-800 bg-slate-900/60 text-left hover:border-slate-700 transition relative">
+                            <div class="text-xs font-semibold text-slate-200 mb-1 flex items-center justify-between">
+                                布局 3
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 opacity-0 check-icon"></i>
+                            </div>
+                            <div class="text-[10px] text-slate-400">首页-分享-钱包-活动-我的 (悬浮胶囊)</div>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- GLOBAL COLOR THEME SELECTION -->
+                <section class="bg-gradient-to-br from-slate-900 to-slate-950 rounded-2xl p-5 border border-slate-700/60 shadow-lg">
+                    <h2 class="font-bold text-sm text-slate-100 mb-3 flex items-center gap-2">
+                        <i data-lucide="palette" class="w-4 h-4 text-purple-400"></i> 全局 APP 色系主题 (Theme Preset)
+                    </h2>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="setTheme('tech-blue')" id="theme-btn-tech-blue" class="theme-select-btn active p-3 rounded-xl border-2 border-blue-500 bg-slate-900 flex flex-col items-center gap-2 transition">
+                            <div class="flex gap-1">
+                                <span class="w-4 h-4 rounded-full bg-blue-500 shadow-md shadow-blue-500/50"></span>
+                                <span class="w-4 h-4 rounded-full bg-cyan-500"></span>
+                                <span class="w-4 h-4 rounded-full bg-slate-900"></span>
+                            </div>
+                            <span class="text-xs font-bold text-slate-200">科技蓝</span>
+                        </button>
+
+                        <button onclick="setTheme('ice-purple')" id="theme-btn-ice-purple" class="theme-select-btn p-3 rounded-xl border-2 border-slate-800 bg-slate-900 flex flex-col items-center gap-2 hover:border-purple-500/50 transition">
+                            <div class="flex gap-1">
+                                <span class="w-4 h-4 rounded-full bg-purple-500 shadow-md shadow-purple-500/50"></span>
+                                <span class="w-4 h-4 rounded-full bg-pink-500"></span>
+                                <span class="w-4 h-4 rounded-full bg-slate-950"></span>
+                            </div>
+                            <span class="text-xs font-bold text-slate-200">碎冰紫</span>
+                        </button>
+
+                        <button onclick="setTheme('aurora-yellow')" id="theme-btn-aurora-yellow" class="theme-select-btn p-3 rounded-xl border-2 border-slate-800 bg-slate-900 flex flex-col items-center gap-2 hover:border-yellow-500/50 transition">
+                            <div class="flex gap-1">
+                                <span class="w-4 h-4 rounded-full bg-yellow-500 shadow-md shadow-yellow-500/50"></span>
+                                <span class="w-4 h-4 rounded-full bg-orange-500"></span>
+                                <span class="w-4 h-4 rounded-full bg-stone-900"></span>
+                            </div>
+                            <span class="text-xs font-bold text-slate-200">极光黄</span>
+                        </button>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- BOTTOM FOOTER ACTION BUTTONS -->
+            <div class="p-4 border-t border-slate-800 bg-slate-900/95 flex items-center justify-between gap-3">
+                <button onclick="prevStep()" class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-semibold flex items-center gap-1.5 transition">
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i> 返回上一步
+                </button>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleModalPreview()" class="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 hover:bg-slate-700 text-xs font-semibold flex items-center gap-1.5 transition">
+                        <i data-lucide="eye" class="w-4 h-4"></i> 预览
+                    </button>
+
+                    <button onclick="nextStep()" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/30 flex items-center gap-1.5 transition">
+                        下一步 <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- RIGHT REAL-TIME PREVIEW CANVAS (PHONE MOCKUP) -->
+        <main class="flex-1 bg-slate-950 flex flex-col items-center justify-center p-4 md:p-8 relative overflow-hidden">
+            
+            <!-- Subtle Ambient Backdrop Glow -->
+            <div class="absolute w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+            <!-- Phone Header Specs -->
+            <div class="mb-3 flex items-center gap-3 text-xs text-slate-400">
+                <span class="flex items-center gap-1.5"><i data-lucide="smartphone" class="w-3.5 h-3.5"></i> iPhone 15 Pro Frame</span>
+                <span>•</span>
+                <span class="text-emerald-400 font-medium flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 实时同步渲染</span>
+            </div>
+
+            <!-- Mobile Phone Outer Container -->
+            <div class="w-[375px] h-[750px] bg-black rounded-[50px] p-3 shadow-2xl border-4 border-slate-800/80 relative flex flex-col shadow-blue-900/20">
+                <!-- Phone Dynamic Island / Notch -->
+                <div class="absolute top-5 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-40 flex items-center justify-end px-2">
+                    <div class="w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-800"></div>
+                </div>
+
+                <!-- Screen Frame -->
+                <div id="phone-screen" data-theme="tech-blue" class="preview-theme-bg w-full h-full rounded-[40px] overflow-hidden flex flex-col relative theme-transition">
+                    
+                    <!-- Top Phone Status Bar -->
+                    <div class="h-10 pt-2 px-6 flex justify-between items-center text-[10px] font-semibold text-slate-400 z-30 select-none">
+                        <span>9:41</span>
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="wifi" class="w-3 h-3"></i>
+                            <i data-lucide="battery-charging" class="w-3.5 h-3.5"></i>
+                        </div>
+                    </div>
+
+                    <!-- SCROLLABLE APP CONTENT CONTAINER -->
+                    <div class="flex-1 overflow-y-auto overflow-x-hidden space-y-3 pb-20 relative" id="app-preview-content">
+                        
+                        <!-- 1. DYNAMIC TOP NAV BAR -->
+                        <div id="render-top-nav" class="px-3 py-2 sticky top-0 z-20 backdrop-blur-md preview-theme-card border-b theme-transition">
+                            <!-- Injected JS -->
+                        </div>
+
+                        <!-- 2. DYNAMIC BANNER SECTION -->
+                        <div id="render-banner" class="px-3 theme-transition">
+                            <!-- Injected JS -->
+                        </div>
+
+                        <!-- 3. DYNAMIC ANNOUNCEMENT BAR -->
+                        <div id="render-notice" class="px-3 theme-transition">
+                            <!-- Injected JS -->
+                        </div>
+
+                        <!-- 4. DYNAMIC GAME PROVIDERS -->
+                        <div id="render-provider" class="px-3 theme-transition">
+                            <!-- Injected JS -->
+                        </div>
+
+                        <!-- 5. DYNAMIC GAME LIST -->
+                        <div id="render-gamelist" class="px-3 theme-transition">
+                            <!-- Injected JS -->
+                        </div>
+
+                    </div>
+
+                    <!-- 6. DYNAMIC BOTTOM TABBAR (Sticky Bottom) -->
+                    <div id="render-tabbar" class="absolute bottom-0 left-0 right-0 z-30 theme-transition">
+                        <!-- Injected JS -->
+                    </div>
+
+                    <!-- Interactive Side Drawer for Game Menu (Simulated) -->
+                    <div id="drawer-menu" class="absolute inset-0 bg-black/70 backdrop-blur-sm z-50 transition-all duration-300 opacity-0 pointer-events-none flex">
+                        <div class="w-3/4 h-full bg-slate-900 p-4 shadow-2xl flex flex-col justify-between transform -translate-x-full transition-transform duration-300" id="drawer-content">
+                            <div>
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white text-xs">G</div>
+                                        <span class="font-bold text-sm text-white">游戏目录清单</span>
+                                    </div>
+                                    <button onclick="toggleDrawer(false)" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                                </div>
+                                <div class="space-y-2 text-xs">
+                                    <div class="p-2.5 rounded-lg bg-slate-800 text-blue-400 font-semibold flex items-center gap-2"><i data-lucide="flame" class="w-4 h-4"></i> 热门推荐游戏</div>
+                                    <div class="p-2.5 rounded-lg hover:bg-slate-800 text-slate-300 flex items-center gap-2"><i data-lucide="gamepad-2" class="w-4 h-4"></i> 电子游艺 (106)</div>
+                                    <div class="p-2.5 rounded-lg hover:bg-slate-800 text-slate-300 flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4"></i> 体育赛事 (45)</div>
+                                    <div class="p-2.5 rounded-lg hover:bg-slate-800 text-slate-300 flex items-center gap-2"><i data-lucide="spade" class="w-4 h-4"></i> 真人视讯 (88)</div>
+                                    <div class="p-2.5 rounded-lg hover:bg-slate-800 text-slate-300 flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4"></i> 彩票专区 (30)</div>
+                                </div>
+                            </div>
+                            <div class="text-[10px] text-slate-500 text-center">APP 侧滑游戏列表 预览</div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Search Page Modal -->
+                    <div id="search-modal" class="absolute inset-0 bg-slate-950 z-50 transition-all duration-300 opacity-0 pointer-events-none p-4 flex flex-col">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 flex items-center gap-2 text-xs">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+                                <input type="text" placeholder="搜索游戏、游戏商或关键字..." class="bg-transparent border-none outline-none text-slate-200 w-full text-xs">
+                            </div>
+                            <button onclick="toggleSearch(false)" class="text-xs text-blue-400 font-semibold">取消</button>
+                        </div>
+                        <div class="text-xs font-semibold text-slate-400 mb-2">热门搜索词</div>
+                        <div class="flex flex-wrap gap-2 text-xs">
+                            <span class="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300">麻将胡了</span>
+                            <span class="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300">PG电子</span>
+                            <span class="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300">雷神之锤</span>
+                            <span class="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300">JILI百家乐</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- FULLSCREEN MODAL PREVIEW OVERLAY -->
+    <div id="preview-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-50 flex flex-col items-center justify-center hidden">
+        <div class="absolute top-5 right-6 flex items-center gap-3">
+            <span class="text-xs text-slate-400">按下 Esc 或点击关闭预览</span>
+            <button onclick="toggleModalPreview()" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="text-center mb-4">
+            <h3 class="text-lg font-bold text-white">APP 完整运行全屏演示</h3>
+            <p class="text-xs text-slate-400">当前主题：<span id="modal-theme-name" class="text-blue-400 font-bold">科技蓝</span></p>
+        </div>
+        <div class="w-[390px] h-[780px] bg-black rounded-[50px] p-3 shadow-2xl border-4 border-slate-700 relative">
+            <div class="w-full h-full rounded-[40px] overflow-hidden" id="modal-phone-container">
+                <!-- Cloned content dynamically injected -->
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        // App State Management
+        const state = {
+            isLoggedIn: false,
+            theme: 'tech-blue', // 'tech-blue', 'ice-purple', 'aurora-yellow'
+            step: 1,
+            layouts: {
+                nav: 1,
+                banner: 1,
+                notice: 1,
+                provider: 1,
+                gamelist: 1,
+                tabbar: 1
+            },
+            selectedProvider: 'PG 电子',
+            expandedAccordion: true,
+            favorites: [1, 3] // Game IDs
+        };
+
+        const providerData = [
+            { id: 'hot', name: '热门', icon: 'fa-fire text-amber-500', count: 180 },
+            { id: 'pg', name: 'PG 电子', icon: 'fa-gamepad text-purple-400', count: 106 },
+            { id: 'jili', name: 'JILI 游艺', icon: 'fa-dice text-emerald-400', count: 84 },
+            { id: 'pp', name: 'PP 竞技', icon: 'fa-bolt text-yellow-400', count: 92 },
+        ];
+
+        const mockGames = [
+            { id: 1, name: '麻将胡了 2', imgBg: 'from-amber-600 to-red-700', tag: 'HOT' },
+            { id: 2, name: '赏金船长', imgBg: 'from-blue-600 to-indigo-800', tag: 'NEW' },
+            { id: 3, name: '寻宝黄金城', imgBg: 'from-yellow-600 to-amber-800', tag: 'POPULAR' },
+            { id: 4, name: '女王秘宝', imgBg: 'from-pink-600 to-purple-800', tag: 'NEW' },
+            { id: 5, name: '财神到', imgBg: 'from-red-600 to-rose-900', tag: 'HOT' },
+            { id: 6, name: '冰雪奇缘', imgBg: 'from-cyan-600 to-blue-800', tag: '' },
+        ];
+
+        // Init icons & app on render
+        window.addEventListener('DOMContentLoaded', () => {
+            renderAll();
+            lucide.createIcons();
+        });
+
+        // Login Toggle
+        function setLoginState(isLogged) {
+            state.isLoggedIn = isLogged;
+            const btnOut = document.getElementById('state-logged-out-btn');
+            const btnIn = document.getElementById('state-logged-in-btn');
+
+            if (isLogged) {
+                btnIn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 bg-blue-600 text-white shadow-md";
+                btnOut.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all duration-200 flex items-center gap-1.5";
+            } else {
+                btnOut.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 bg-blue-600 text-white shadow-md";
+                btnIn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all duration-200 flex items-center gap-1.5";
+            }
+            renderTopNav();
+        }
+
+        // Layout Switcher
+        function setLayout(section, option) {
+            state.layouts[section] = option;
+            
+            // Highlight Button in Admin Panel
+            for(let i = 1; i <= 3; i++) {
+                const btn = document.getElementById(`btn-${section}-${i}`);
+                if (btn) {
+                    const check = btn.querySelector('.check-icon');
+                    if (i === option) {
+                        btn.className = "layout-btn active p-3 rounded-xl border border-blue-500 bg-blue-500/10 text-left transition relative";
+                        if (check) check.classList.remove('opacity-0');
+                    } else {
+                        btn.className = "layout-btn p-3 rounded-xl border border-slate-800 bg-slate-900/60 text-left hover:border-slate-700 transition relative";
+                        if (check) check.classList.add('opacity-0');
+                    }
+                }
+            }
+
+            // Render specific dynamic component
+            switch(section) {
+                case 'nav': renderTopNav(); break;
+                case 'banner': renderBanner(); break;
+                case 'notice': renderNotice(); break;
+                case 'provider': renderProvider(); break;
+                case 'gamelist': renderGameList(); break;
+                case 'tabbar': renderTabBar(); break;
+            }
+            lucide.createIcons();
+        }
+
+        // Color Theme Switcher
+        function setTheme(themeKey) {
+            state.theme = themeKey;
+            document.documentElement.setAttribute('data-theme', themeKey);
+            document.getElementById('phone-screen').setAttribute('data-theme', themeKey);
+
+            // Update Theme Choice Highlight
+            ['tech-blue', 'ice-purple', 'aurora-yellow'].forEach(t => {
+                const btn = document.getElementById(`theme-btn-${t}`);
+                if (t === themeKey) {
+                    btn.classList.add('border-blue-500', 'border-2');
+                    btn.classList.remove('border-slate-800');
+                } else {
+                    btn.classList.remove('border-blue-500', 'border-2');
+                    btn.classList.add('border-slate-800');
+                }
+            });
+
+            // Update Modal Label
+            const themeNames = { 'tech-blue': '科技蓝', 'ice-purple': '碎冰紫', 'aurora-yellow': '极光黄' };
+            document.getElementById('modal-theme-name').innerText = themeNames[themeKey];
+        }
+
+        // 1. RENDER TOP NAV
+        function renderTopNav() {
+            const container = document.getElementById('render-top-nav');
+            const l = state.layouts.nav;
+            const logged = state.isLoggedIn;
+
+            // Element snippets
+            const menuElem = `<button onclick="toggleDrawer(true)" class="p-1.5 rounded-lg bg-slate-800/80 text-slate-200 hover:text-white"><i data-lucide="menu" class="w-4 h-4"></i></button>`;
+            const logoElem = `<div class="flex items-center gap-1 font-extrabold tracking-wider text-xs text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300"><i data-lucide="shield-vector" class="w-4 h-4 text-blue-400"></i> APEX</div>`;
+            
+            let rightButtons = '';
+            if (!logged) {
+                if (l === 1) {
+                    rightButtons = `
+                        <div class="flex items-center gap-1.5">
+                            <button class="px-2.5 py-1 rounded-md text-[10px] font-bold border border-slate-700 text-slate-200">注册</button>
+                            <button class="px-2.5 py-1 rounded-md text-[10px] font-bold preview-theme-btn text-white">登录</button>
+                        </div>`;
+                } else if (l === 2) {
+                    rightButtons = `
+                        <div class="flex items-center gap-1">
+                            <button class="px-3 py-1 rounded-full text-[10px] font-bold border border-slate-700 text-slate-200">注册</button>
+                            <button class="px-3 py-1 rounded-full text-[10px] font-bold preview-theme-btn text-white">登录</button>
+                        </div>`;
+                } else {
+                    rightButtons = `
+                        <div class="flex items-center gap-1.5">
+                            <button class="px-2 py-1 text-[10px] font-semibold text-slate-300">注册</button>
+                            <button class="px-3 py-1 rounded-lg text-[10px] font-bold preview-theme-btn text-white preview-theme-glow">登录</button>
+                        </div>`;
+                }
+            } else {
+                // Logged In Elements
+                rightButtons = `
+                    <div class="flex items-center gap-2">
+                        <div class="text-[10px] text-slate-300 bg-slate-900/90 px-2 py-0.5 rounded border border-slate-800">
+                            余额: <span class="text-amber-400 font-bold">¥ 8,820.00</span>
+                        </div>
+                        <button class="px-2.5 py-1 rounded-md text-[10px] font-bold preview-theme-btn text-white shadow-sm">充值</button>
+                    </div>`;
+            }
+
+            // Layout Combinations
+            if (l === 1) {
+                // Left-to-right: Menu, Logo, Reg, Login
+                container.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            ${menuElem}
+                            ${logoElem}
+                        </div>
+                        ${rightButtons}
+                    </div>`;
+            } else if (l === 2) {
+                // Left-to-right: Reg, Login, Logo, Menu
+                container.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        ${rightButtons}
+                        <div class="flex items-center gap-2.5">
+                            ${logoElem}
+                            ${menuElem}
+                        </div>
+                    </div>`;
+            } else {
+                // Centered Logo Layout
+                container.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        ${menuElem}
+                        ${logoElem}
+                        ${rightButtons}
+                    </div>`;
+            }
+        }
+
+        // 2. RENDER BANNER
+        function renderBanner() {
+            const container = document.getElementById('render-banner');
+            const l = state.layouts.banner;
+
+            if (l === 1) {
+                // Stacked 2 Rows (Row 1: Single Carousel, Row 2: 3 Items)
+                container.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="w-full h-28 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-3 flex flex-col justify-end relative overflow-hidden shadow-lg">
+                            <span class="absolute top-2 right-2 text-[9px] bg-black/40 text-white px-1.5 py-0.5 rounded-full backdrop-blur-sm">1/3 自动轮播</span>
+                            <h3 class="text-xs font-black text-white">年度巅峰赛事 独家首发</h3>
+                            <p class="text-[9px] text-white/80">首充即送 100% 豪华礼包</p>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <div class="h-14 rounded-lg bg-slate-800 p-1.5 flex flex-col justify-between border border-slate-700/50">
+                                <span class="text-[9px] font-bold text-amber-400">首存优惠</span>
+                                <span class="text-[8px] text-slate-400">赠送 88 元</span>
+                            </div>
+                            <div class="h-14 rounded-lg bg-slate-800 p-1.5 flex flex-col justify-between border border-slate-700/50">
+                                <span class="text-[9px] font-bold text-cyan-400">VIP 专享</span>
+                                <span class="text-[8px] text-slate-400">专属管家服务</span>
+                            </div>
+                            <div class="h-14 rounded-lg bg-slate-800 p-1.5 flex flex-col justify-between border border-slate-700/50">
+                                <span class="text-[9px] font-bold text-purple-400">每日返水</span>
+                                <span class="text-[8px] text-slate-400">最高 2.0%</span>
+                            </div>
+                        </div>
+                    </div>`;
+            } else if (l === 2) {
+                // Split Columns (Left Wide, Right 2 Stacked)
+                container.innerHTML = `
+                    <div class="grid grid-cols-5 gap-2 h-36">
+                        <div class="col-span-3 rounded-xl bg-gradient-to-br from-blue-700 to-indigo-900 p-3 flex flex-col justify-end relative overflow-hidden">
+                            <span class="text-[9px] bg-blue-500/40 text-blue-200 px-1.5 py-0.5 rounded w-max mb-1">主推狂欢</span>
+                            <h4 class="text-xs font-extrabold text-white">PG 霸王龙震撼上线</h4>
+                        </div>
+                        <div class="col-span-2 flex flex-col gap-2">
+                            <div class="flex-1 rounded-xl bg-gradient-to-r from-purple-800 to-slate-800 p-2 flex flex-col justify-center">
+                                <span class="text-[9px] font-bold text-pink-300">电竞联赛</span>
+                            </div>
+                            <div class="flex-1 rounded-xl bg-gradient-to-r from-amber-700 to-slate-800 p-2 flex flex-col justify-center">
+                                <span class="text-[9px] font-bold text-yellow-300">真人视讯</span>
+                            </div>
+                        </div>
+                    </div>`;
+            } else {
+                // Hybrid Grid Layout
+                container.innerHTML = `
+                    <div class="w-full h-32 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-900 p-3 flex justify-between items-center relative overflow-hidden">
+                        <div class="z-10">
+                            <span class="text-[9px] bg-white/20 text-white px-2 py-0.5 rounded-full">新用户大礼包</span>
+                            <h3 class="text-sm font-black text-white mt-1">签到领万元体验金</h3>
+                            <button class="mt-2 px-3 py-1 bg-white text-teal-900 font-bold rounded-lg text-[9px]">立即参与</button>
+                        </div>
+                        <i data-lucide="gift" class="w-16 h-16 text-white/15 absolute -right-2 -bottom-2"></i>
+                    </div>`;
+            }
+        }
+
+        // 3. RENDER ANNOUNCEMENT
+        function renderNotice() {
+            const container = document.getElementById('render-notice');
+            const l = state.layouts.notice;
+
+            const marqueeElem = `
+                <div class="flex-1 overflow-hidden text-[10px] text-slate-300 flex items-center gap-1.5">
+                    <i data-lucide="volume-2" class="w-3.5 h-3.5 preview-theme-primary shrink-0"></i>
+                    <div class="overflow-hidden w-full relative">
+                        <span class="animate-marquee">重要通知：系统将于今日凌晨 02:00 进行全线升级，预计耗时 30 分钟。感谢您的配合！</span>
+                    </div>
+                </div>`;
+            
+            const msgElem = `
+                <div class="relative shrink-0 cursor-pointer">
+                    <i data-lucide="bell" class="w-4 h-4 text-slate-300"></i>
+                    <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-[8px] text-white flex items-center justify-center font-bold">3</span>
+                </div>`;
+
+            const searchElem = `
+                <button onclick="toggleSearch(true)" class="p-1 rounded bg-slate-800/80 text-slate-300 hover:text-white shrink-0">
+                    <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                </button>`;
+
+            if (l === 1) {
+                // Marquee -> Message -> Search
+                container.innerHTML = `
+                    <div class="py-1.5 px-2.5 rounded-xl bg-slate-900/80 border border-slate-800/90 flex items-center gap-2">
+                        ${marqueeElem}
+                        <div class="h-3 w-[1px] bg-slate-800"></div>
+                        ${msgElem}
+                        ${searchElem}
+                    </div>`;
+            } else {
+                // Search -> Marquee -> Message
+                container.innerHTML = `
+                    <div class="py-1.5 px-2.5 rounded-xl bg-slate-900/80 border border-slate-800/90 flex items-center gap-2">
+                        ${searchElem}
+                        <div class="h-3 w-[1px] bg-slate-800"></div>
+                        ${marqueeElem}
+                        ${msgElem}
+                    </div>`;
+            }
+        }
+
+        // 4. RENDER PROVIDERS
+        function renderProvider() {
+            const container = document.getElementById('render-provider');
+            const l = state.layouts.provider;
+
+            let html = `<div class="grid grid-cols-4 gap-2">`;
+            
+            providerData.forEach(p => {
+                const isSelected = state.selectedProvider === p.name;
+                const activeStyle = isSelected ? 'border-blue-500 bg-blue-500/20' : 'border-slate-800 bg-slate-900/70';
+
+                if (l === 1) {
+                    // Standard Square Background
+                    html += `
+                        <button onclick="selectProvider('${p.name}')" class="p-2 rounded-xl border ${activeStyle} flex flex-col items-center justify-center gap-1 transition">
+                            <i class="fa-solid ${p.icon} text-lg"></i>
+                            <span class="text-[10px] font-medium text-slate-200">${p.name}</span>
+                        </button>`;
+                } else if (l === 2) {
+                    // Rhombus / Slanted Background
+                    html += `
+                        <button onclick="selectProvider('${p.name}')" class="rhombus-card p-2 rounded-lg border ${activeStyle} flex flex-col items-center justify-center gap-0.5 transition">
+                            <i class="fa-solid ${p.icon} text-sm"></i>
+                            <span class="text-[9px] font-bold text-slate-200">${p.name}</span>
+                        </button>`;
+                } else {
+                    // Pill Neon Style
+                    html += `
+                        <button onclick="selectProvider('${p.name}')" class="py-2 px-1 rounded-full border ${activeStyle} flex flex-col items-center justify-center gap-1 transition">
+                            <i class="fa-solid ${p.icon} text-base"></i>
+                            <span class="text-[9px] font-semibold text-slate-200">${p.name}</span>
+                        </button>`;
+                }
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // Select game provider
+        function selectProvider(name) {
+            state.selectedProvider = name;
+            renderProvider();
+            renderGameList();
+            lucide.createIcons();
+        }
+
+        // 5. RENDER GAME LIST
+        function renderGameList() {
+            const container = document.getElementById('render-gamelist');
+            const l = state.layouts.gamelist;
+
+            // Provider Accordion & Stats Header
+            const providerInfo = providerData.find(p => p.name === state.selectedProvider) || providerData[1];
+            
+            let header = `
+                <div class="mb-2 bg-slate-900/90 rounded-xl p-2.5 border border-slate-800 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid ${providerInfo.icon} text-sm"></i>
+                        <div>
+                            <span class="font-bold text-slate-200 text-xs">${providerInfo.name}</span>
+                            <span class="ml-1.5 text-[9px] px-1.5 py-0.2 rounded-full bg-slate-800 text-blue-400 border border-slate-700">共 ${providerInfo.count} 款</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 text-[10px] text-slate-400">
+                        <span>15 / ${providerInfo.count}</span>
+                        <button onclick="toggleAccordion()" class="text-slate-400 hover:text-white">
+                            <i data-lucide="${state.expandedAccordion ? 'chevron-up' : 'chevron-down'}" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>`;
+
+            if (!state.expandedAccordion) {
+                container.innerHTML = header + `<div class="text-[10px] text-slate-500 text-center py-2 bg-slate-900/40 rounded-xl">已折叠游戏列表 (点击上方图标展开)</div>`;
+                return;
+            }
+
+            let gamesGrid = '';
+
+            if (l === 1) {
+                // 3 Columns Layout (Rectangular Icons, Favorite Top-Right)
+                gamesGrid = `<div class="grid grid-cols-3 gap-2">`;
+                mockGames.forEach(g => {
+                    const isFav = state.favorites.includes(g.id);
+                    gamesGrid += `
+                        <div class="rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex flex-col relative group">
+                            <button onclick="toggleFav(${g.id})" class="absolute top-1 right-1 z-10 w-5 h-5 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                                <i data-lucide="heart" class="w-3 h-3 ${isFav ? 'text-red-500 fill-red-500' : 'text-white'}"></i>
+                            </button>
+                            <div class="h-16 bg-gradient-to-tr ${g.imgBg} flex items-center justify-center relative">
+                                <i data-lucide="gamepad-2" class="w-7 h-7 text-white/40"></i>
+                            </div>
+                            <div class="p-1.5 text-center">
+                                <div class="text-[10px] font-bold text-slate-200 truncate">${g.name}</div>
+                            </div>
+                        </div>`;
+                });
+                gamesGrid += `</div>`;
+
+            } else if (l === 2) {
+                // 4 Columns Layout (Slanted Square Icons, Favorite Bottom-Right)
+                gamesGrid = `<div class="grid grid-cols-4 gap-1.5">`;
+                mockGames.forEach(g => {
+                    const isFav = state.favorites.includes(g.id);
+                    gamesGrid += `
+                        <div class="skewed-game-card overflow-hidden bg-slate-900 border border-slate-800 flex flex-col relative">
+                            <button onclick="toggleFav(${g.id})" class="absolute bottom-1 right-1 z-10 w-4 h-4 rounded-full bg-black/60 flex items-center justify-center">
+                                <i data-lucide="heart" class="w-2.5 h-2.5 ${isFav ? 'text-red-500 fill-red-500' : 'text-slate-300'}"></i>
+                            </button>
+                            <div class="h-14 bg-gradient-to-tr ${g.imgBg} flex items-center justify-center">
+                                <i data-lucide="sparkles" class="w-5 h-5 text-white/40"></i>
+                            </div>
+                            <div class="p-1 text-center bg-slate-900">
+                                <div class="text-[9px] font-semibold text-slate-300 truncate">${g.name}</div>
+                            </div>
+                        </div>`;
+                });
+                gamesGrid += `</div>`;
+
+            } else {
+                // 2 Columns Layout (Detailed Cards with Bookmark)
+                gamesGrid = `<div class="grid grid-cols-2 gap-2">`;
+                mockGames.forEach(g => {
+                    const isFav = state.favorites.includes(g.id);
+                    gamesGrid += `
+                        <div class="rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex flex-col relative">
+                            <button onclick="toggleFav(${g.id})" class="absolute top-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm flex items-center gap-1 text-[8px] text-white">
+                                <i data-lucide="bookmark" class="w-2.5 h-2.5 ${isFav ? 'text-amber-400 fill-amber-400' : 'text-white'}"></i>
+                                ${isFav ? '已收藏' : '收藏'}
+                            </button>
+                            <div class="h-20 bg-gradient-to-tr ${g.imgBg} flex items-center justify-center">
+                                <i data-lucide="trophy" class="w-8 h-8 text-white/30"></i>
+                            </div>
+                            <div class="p-2 flex items-center justify-between bg-slate-900">
+                                <span class="text-[10px] font-bold text-slate-200 truncate">${g.name}</span>
+                                <span class="text-[8px] px-1 py-0.5 bg-blue-500/20 text-blue-400 rounded">爆率 98%</span>
+                            </div>
+                        </div>`;
+                });
+                gamesGrid += `</div>`;
+            }
+
+            container.innerHTML = header + gamesGrid;
+        }
+
+        // Toggle Favorite
+        function toggleFav(id) {
+            if (state.favorites.includes(id)) {
+                state.favorites = state.favorites.filter(fId => fId !== id);
+            } else {
+                state.favorites.push(id);
+            }
+            renderGameList();
+            lucide.createIcons();
+        }
+
+        function toggleAccordion() {
+            state.expandedAccordion = !state.expandedAccordion;
+            renderGameList();
+            lucide.createIcons();
+        }
+
+        // 6. RENDER BOTTOM TABBAR
+        function renderTabBar() {
+            const container = document.getElementById('render-tabbar');
+            const l = state.layouts.tabbar;
+
+            let items = [];
+
+            if (l === 1) {
+                // Home, Promo, Share, Wallet, Profile (Standard)
+                items = [
+                    { id: 'home', name: '首页', icon: 'home', active: true },
+                    { id: 'promo', name: '优惠活动', icon: 'gift', active: false },
+                    { id: 'share', name: '分享', icon: 'share-2', active: false },
+                    { id: 'wallet', name: '钱包', icon: 'wallet', active: false },
+                    { id: 'mine', name: '我的', icon: 'user', active: false },
+                ];
+
+                let html = `<div class="h-16 px-3 bg-slate-900/95 border-t border-slate-800 flex items-center justify-around">`;
+                items.forEach(it => {
+                    html += `
+                        <div class="flex flex-col items-center gap-0.5 ${it.active ? 'preview-theme-primary' : 'text-slate-400'}">
+                            <i data-lucide="${it.icon}" class="w-4 h-4"></i>
+                            <span class="text-[9px] font-semibold">${it.name}</span>
+                        </div>`;
+                });
+                html += `</div>`;
+                container.innerHTML = html;
+
+            } else if (l === 2) {
+                // Home, Share, Promo (Center Elevated), Wallet, Profile
+                items = [
+                    { id: 'home', name: '首页', icon: 'home', active: true },
+                    { id: 'share', name: '分享', icon: 'share-2', active: false },
+                    { id: 'promo', name: '优惠活动', icon: 'flame', active: false, center: true },
+                    { id: 'wallet', name: '钱包', icon: 'wallet', active: false },
+                    { id: 'mine', name: '我的', icon: 'user', active: false },
+                ];
+
+                let html = `<div class="h-16 px-2 bg-slate-900/95 border-t border-slate-800 flex items-center justify-around relative">`;
+                items.forEach(it => {
+                    if (it.center) {
+                        html += `
+                            <div class="relative -top-4 flex flex-col items-center">
+                                <div class="w-11 h-11 rounded-full preview-theme-btn flex items-center justify-center text-white shadow-lg border-2 border-slate-950 preview-theme-glow">
+                                    <i data-lucide="${it.icon}" class="w-5 h-5"></i>
+                                </div>
+                                <span class="text-[8px] font-bold text-amber-400 mt-0.5">${it.name}</span>
+                            </div>`;
+                    } else {
+                        html += `
+                            <div class="flex flex-col items-center gap-0.5 ${it.active ? 'preview-theme-primary' : 'text-slate-400'}">
+                                <i data-lucide="${it.icon}" class="w-4 h-4"></i>
+                                <span class="text-[9px] font-semibold">${it.name}</span>
+                            </div>`;
+                    }
+                });
+                html += `</div>`;
+                container.innerHTML = html;
+
+            } else {
+                // Home, Share, Wallet, Promo, Profile (Floating Pill Style)
+                items = [
+                    { id: 'home', name: '首页', icon: 'home', active: true },
+                    { id: 'share', name: '分享', icon: 'share-2', active: false },
+                    { id: 'wallet', name: '钱包', icon: 'wallet', active: false },
+                    { id: 'promo', name: '优惠活动', icon: 'gift', active: false },
+                    { id: 'mine', name: '我的', icon: 'user', active: false },
+                ];
+
+                let html = `<div class="p-2 bg-transparent"><div class="h-14 px-3 bg-slate-900/90 backdrop-blur-lg border border-slate-700/80 rounded-2xl flex items-center justify-around shadow-2xl">`;
+                items.forEach(it => {
+                    html += `
+                        <div class="flex flex-col items-center gap-0.5 ${it.active ? 'px-2.5 py-1 rounded-xl bg-blue-500/20 preview-theme-primary' : 'text-slate-400'}">
+                            <i data-lucide="${it.icon}" class="w-4 h-4"></i>
+                            <span class="text-[8px] font-bold">${it.name}</span>
+                        </div>`;
+                });
+                html += `</div></div>`;
+                container.innerHTML = html;
+            }
+        }
+
+        // Drawer Menu Demo
+        function toggleDrawer(open) {
+            const drawer = document.getElementById('drawer-menu');
+            const content = document.getElementById('drawer-content');
+            if (open) {
+                drawer.classList.remove('opacity-0', 'pointer-events-none');
+                content.classList.remove('-translate-x-full');
+            } else {
+                drawer.classList.add('opacity-0', 'pointer-events-none');
+                content.classList.add('-translate-x-full');
+            }
+        }
+
+        // Search Modal Demo
+        function toggleSearch(open) {
+            const modal = document.getElementById('search-modal');
+            if (open) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+            } else {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        // Modal Fullscreen Preview
+        function toggleModalPreview() {
+            const modal = document.getElementById('preview-modal');
+            const container = document.getElementById('modal-phone-container');
+            const phoneScreen = document.getElementById('phone-screen');
+
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                container.appendChild(phoneScreen);
+            } else {
+                modal.classList.add('hidden');
+                document.querySelector('main > div:nth-child(3)').appendChild(phoneScreen);
+            }
+        }
+
+        // Step Navigation Logic
+        function nextStep() {
+            if (state.step < 6) {
+                state.step++;
+                highlightStepBadge();
+                scrollToStep(state.step);
+            }
+        }
+
+        function prevStep() {
+            if (state.step > 1) {
+                state.step--;
+                highlightStepBadge();
+                scrollToStep(state.step);
+            }
+        }
+
+        function highlightStepBadge() {
+            for(let i = 1; i <= 6; i++) {
+                const badge = document.getElementById(`step-badge-${i}`);
+                if (i === state.step) {
+                    badge.className = "px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium";
+                } else {
+                    badge.className = "px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-medium";
+                }
+            }
+        }
+
+        function scrollToStep(step) {
+            const sectionIds = ['section-nav', 'section-banner', 'section-notice', 'section-provider', 'section-gamelist', 'section-tabbar'];
+            const elem = document.getElementById(sectionIds[step - 1]);
+            if (elem) {
+                elem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // Global Render Helper
+        function renderAll() {
+            renderTopNav();
+            renderBanner();
+            renderNotice();
+            renderProvider();
+            renderGameList();
+            renderTabBar();
+        }
+
+        // Keyboard Shortcut ESC for Modal
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('preview-modal');
+                if (!modal.classList.contains('hidden')) {
+                    toggleModalPreview();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
